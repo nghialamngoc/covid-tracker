@@ -1,46 +1,61 @@
-import { Card, CardContent } from '@material-ui/core';
-import React, { useEffect, useState } from 'react';
-import './App.css';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from './components/Header';
 import InfoBox from './components/InfoBox';
-import LineGraph from './components/LineGraph';
 import Map from './components/Map';
-import Table from './components/Table';
-import { sortData } from './util';
+
+import './App.css';
 import "leaflet/dist/leaflet.css";
+import TableData from './components/TableData';
+import { sortData } from './util';
+import { changeCountriesData, changeCountryInfo } from './redux/country/countryAction';
 
 function App() {
-  const [countryInfo, setCountryInfo] = useState({});
-  const [tableData, setTableData] = useState([]);
-  const [mapCenter, setMapCenter] = useState({lat: 34.80746, lng: -40.4796});
+  const countryInfo = useSelector(state => state.country.countryInfo);
+  const [mapCenter, setMapCenter] = useState({ lat: 34.80746, lng: -40.4796 });
   const [mapZoom, setMapZoom] = useState(3);
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    fetch('https://disease.sh/v3/covid-19/all')
-      .then(res => res.json())
-      .then(data => {
-        setCountryInfo(data);
-      })
-  }, []);
+  const initCountriesData = useCallback(
+    (data) => {
+      dispatch(changeCountriesData(data))
+    },
+    [dispatch],
+  );
 
+  const initCountryInfo = useCallback(
+    (data) => {
+      dispatch(changeCountryInfo(data))
+    },
+    [dispatch],
+  );
   useEffect(() => {
     const getcountriesData = async () => {
       await fetch("https://disease.sh/v3/covid-19/countries")
         .then(res => res.json())
         .then(data => {
-          setTableData(sortData(data));
+          initCountriesData(sortData(data));
         })
         .catch(err => console.log('err', err))
     }
-
     getcountriesData();
-  }, []);
+  }, [initCountriesData]);
+
+  useEffect(() => {
+    fetch('https://disease.sh/v3/covid-19/all')
+      .then(res => res.json())
+      .then(data => {
+        initCountryInfo(data);
+      })
+  }, [initCountryInfo]);
 
   return (
+
     <div className="app">
       <div className="app__left">
         <div className="app__header">
-          <Header setCountryInfo={setCountryInfo}></Header>
+          <Header></Header>
         </div>
         <div className="app__stats">
           <InfoBox title="Coronavirus Cases" cases={countryInfo.todayCases} total={countryInfo.cases}></InfoBox>
@@ -51,15 +66,11 @@ function App() {
           center={mapCenter}
           zoom={mapZoom}></Map>
       </div>
-      <Card className="app__right">
-        <CardContent>
-          <h3>Live cases by Country</h3>
-          <Table countries={tableData}></Table>
-          <h3>Worldwide new cases</h3>
-          <LineGraph></LineGraph>
-        </CardContent>
-      </Card>
+      <div className="app__right">
+        <TableData></TableData>
+      </div>
     </div>
+
   );
 }
 

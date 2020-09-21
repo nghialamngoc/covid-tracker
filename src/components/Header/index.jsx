@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { FormControl, MenuItem, Select } from '@material-ui/core';
 import './header.scss';
+import { useDispatch, useSelector } from 'react-redux';
+import { changeCountryInfo, changeCountrySelectedCode } from '../../redux/country/countryAction';
 
 export default function Header(props) {
   const [countries, setCountries] = useState(['USA', 'UK', 'INDIA']);
-  const [countrySelected, setCountrySelected] = useState('worldwide');
+  const countrySelectedCode = useSelector(state => state.country.countrySelectedCode);
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const getcountriesData = async () => {
       await fetch("https://disease.sh/v3/covid-19/countries")
@@ -30,8 +34,8 @@ export default function Header(props) {
     await fetch(url)
       .then(res => res.json())
       .then(data => {
-        setCountrySelected(countryCode);
-        props.setCountryInfo(data);
+        dispatch(changeCountrySelectedCode(countryCode));
+        dispatch(changeCountryInfo(data));
       })
   }
   return (
@@ -40,7 +44,7 @@ export default function Header(props) {
       <FormControl className="app__dropdown"></FormControl>
       <Select
         variant="outlined"
-        value={countrySelected} onChange={(e) => onCountryChange(e)}>
+        value={countrySelectedCode} onChange={(e) => onCountryChange(e)}>
         <MenuItem value="worldwide">Worldwide</MenuItem>
         {countries.map((country, index) => {
           return <MenuItem value={country.value} key={index}>{country.name}</MenuItem>
